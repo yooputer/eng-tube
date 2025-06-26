@@ -50,7 +50,7 @@ const VideosSectionSuspense = () => {
                                         </Link>
                                     </TableCell>
                                     <TableCell>Visibility</TableCell>
-                                    <TableCell>Status</TableCell>
+                                    <TableCell>{ video.muxStatus }</TableCell>
                                     <TableCell>{video.createdAt.toISOString()}</TableCell>
                                     <TableCell className="text-right">0</TableCell>
                                     <TableCell className="text-right">0</TableCell>
