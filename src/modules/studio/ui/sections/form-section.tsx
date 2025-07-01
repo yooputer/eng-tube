@@ -10,6 +10,7 @@ import {
     CopyIcon,
     Globe2Icon,
     ImagePlusIcon,
+    Loader2Icon,
     LockIcon,
     MoreVerticalIcon, RotateCcwIcon,
     SparklesIcon,
@@ -154,6 +155,17 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
         },
         onError: () => {
             toast.error("비디오 업데이트 오류")
+        }
+    });
+
+    const restoreThumbnail = trpc.videos.restoreThumbnail.useMutation({
+        onSuccess: () => {
+            utils.studio.getMany.invalidate();
+            utils.studio.getOne.invalidate({id: videoId});
+            toast.success("Thumbnail restored");
+        },
+        onError: () => {
+            toast.error("썸네일 복원 오류")
         }
     });
 
@@ -322,9 +334,10 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                                                             AI-generated
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            onClick={() => {}}
+                                                            onClick={() => restoreThumbnail.mutate({ id: videoId })}
+                                                            disabled={restoreThumbnail.isPending}
                                                         >
-                                                            <RotateCcwIcon className="size-4 mr-1" />
+                                                            { restoreThumbnail.isPending ? <Loader2Icon className="animate-spin" /> : <RotateCcwIcon className="size-4 mr-1"/> }
                                                             Restore
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
