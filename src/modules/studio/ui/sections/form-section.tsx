@@ -169,6 +169,24 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
         }
     });
 
+    const generateTitle = trpc.videos.generateTitle.useMutation({
+        onSuccess: () => {
+            toast.success("Background job started", { description: "This may take some time" });
+        },
+        onError: () => {
+            toast.error("AI 제목 생성 오류")
+        }
+    });
+
+    const generateDescription = trpc.videos.generateDescription.useMutation({
+        onSuccess: () => {
+            toast.success("Background job started", { description: "This may take some time" });
+        },
+        onError: () => {
+            toast.error("AI 설명 생성 오류")
+        }
+    });
+
     const form = useForm<z.infer<typeof videoUpdateSchema>>({
         resolver: zodResolver(videoUpdateSchema),
         defaultValues: video,
@@ -240,13 +258,13 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                                                     variant="outline"
                                                     type="button"
                                                     className="rounded-full size-6 [&_svg]:size-3"
-                                                    // onClick={() => generateTitle.mutate({id: videoId})}
-                                                    // disabled={generateTitle.isPending || !video.muxTrackId}
+                                                    onClick={() => generateTitle.mutate({id: videoId})}
+                                                    disabled={generateTitle.isPending || !video.muxTrackId}
                                                 >
-                                                    {/*{generateTitle.isPending*/}
-                                                    {/*    ? <Loader2Icon className="animate-spin"/>*/}
-                                                    {/*    : <SparklesIcon/>*/}
-                                                    {/*}*/}
+                                                    {generateTitle.isPending
+                                                        ? <Loader2Icon className="animate-spin"/>
+                                                        : <SparklesIcon/>
+                                                    }
                                                 </Button>
                                             </div>
                                         </FormLabel>
@@ -273,13 +291,13 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                                                     variant="outline"
                                                     type="button"
                                                     className="rounded-full size-6 [&_svg]:size-3"
-                                                    // onClick={() => generateDescription.mutate({id: videoId})}
-                                                    // disabled={generateDescription.isPending || !video.muxTrackId}
+                                                    onClick={() => generateDescription.mutate({id: videoId})}
+                                                    disabled={generateDescription.isPending || !video.muxTrackId}
                                                 >
-                                                    {/*{generateDescription.isPending*/}
-                                                    {/*    ? <Loader2Icon className="animate-spin"/>*/}
-                                                    {/*    : <SparklesIcon/>*/}
-                                                    {/*}*/}
+                                                    {generateDescription.isPending
+                                                        ? <Loader2Icon className="animate-spin"/>
+                                                        : <SparklesIcon/>
+                                                    }
                                                 </Button>
                                             </div>
                                         </FormLabel>
