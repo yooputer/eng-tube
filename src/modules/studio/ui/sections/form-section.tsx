@@ -51,6 +51,7 @@ import {useRouter} from "next/navigation";
 import {THUMBNAIL_FALLBACK} from "@/modules/videos/constants";
 import Image from "next/image";
 import {ThumbnailUploadModal} from "@/modules/studio/ui/components/thumbnail-upload-modal";
+import {ThumbnailGenerateModal} from "@/modules/studio/ui/components/thumbnail-generate-modal";
 
 interface FormSectionProps{
     videoId: string;
@@ -127,7 +128,8 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     const router = useRouter();
     const utils = trpc.useUtils();
 
-    const [thumbnailModalOpen, setThumbnailModalOpen] = useState(false);
+    const [thumbnailUploadModalOpen, setThumbnailUploadModalOpen] = useState(false);
+    const [thumbnailGenerateModalOpen, setThumbnailGenerateModalOpen] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
 
     const [video] = trpc.studio.getOne.useSuspenseQuery({id: videoId});
@@ -207,10 +209,16 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
 
     return (
         <>
+            <ThumbnailGenerateModal
+                videoId={videoId}
+                open={thumbnailGenerateModalOpen}
+                onOpenChange={setThumbnailGenerateModalOpen}
+            />
+
             <ThumbnailUploadModal
                 videoId={videoId}
-                open={thumbnailModalOpen}
-                onOpenChange={setThumbnailModalOpen}
+                open={thumbnailUploadModalOpen}
+                onOpenChange={setThumbnailUploadModalOpen}
             />
 
             <Form {...form}>
@@ -340,13 +348,12 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="start" side="right">
-                                                        <DropdownMenuItem onClick={() => setThumbnailModalOpen(true)}>
+                                                        <DropdownMenuItem onClick={() => setThumbnailUploadModalOpen(true)}>
                                                             <ImagePlusIcon className="size-4 mr-1" />
                                                             Change
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            onClick={() => {}}
-                                                            disabled
+                                                            onClick={() => setThumbnailGenerateModalOpen(true)}
                                                         >
                                                             <SparklesIcon className="size-4 mr-1" />
                                                             AI-generated
