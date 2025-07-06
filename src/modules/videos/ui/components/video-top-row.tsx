@@ -11,18 +11,18 @@ interface VideoTopRowProps {
 }
 
 export const VideoTopRow = ({video}: VideoTopRowProps) => {
-    const tempViews = 123123123;
+    const viewCount = video.viewCount;
 
     const compactViews = useMemo(() => {
         return Intl.NumberFormat('en', {
             notation: 'compact'
-        }).format(tempViews);
+        }).format(viewCount);
     }, []);
 
     const expandedViews = useMemo(() => {
         return Intl.NumberFormat('en', {
             notation: 'standard'
-        }).format(tempViews);
+        }).format(viewCount);
     }, []);
 
     const compactDate = useMemo(() => {
