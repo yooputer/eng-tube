@@ -1,7 +1,7 @@
-import {and, eq, getTableColumns, inArray} from "drizzle-orm";
+import {and, eq, getTableColumns, inArray, isNotNull} from "drizzle-orm";
 import {baseProcedure, createTRPCRouter, protectedProcedure} from "@/trpc/init";
 import {db} from "@/db";
-import {users, videoReactions, videos, videoUpdateSchema, videoViews} from "@/db/schema";
+import {subscriptions, users, videoReactions, videos, videoUpdateSchema, videoViews} from "@/db/schema";
 import {mux} from "@/lib/mux";
 import {TRPCError} from "@trpc/server";
 import {z} from "zod";
@@ -36,12 +36,21 @@ export const videosRouter = createTRPCRouter({
                     .where(inArray(videoReactions.userId, userId ? [userId] : []))
             );
 
+            const viewerSubscriptions = db.$with("viewer_subscriptions").as(
+                db
+                    .select()
+                    .from(subscriptions)
+                    .where(inArray(subscriptions.viewerId, userId ? [userId] : []))
+            )
+
             const [exitingVideo] = await db
-                .with(viewerReactions)
+                .with(viewerReactions, viewerSubscriptions)
                 .select({
                     ...getTableColumns(videos),
                     user: {
                         ...getTableColumns(users),
+                        subscriberCount: db.$count(subscriptions, eq(subscriptions.creatorId, users.id)),
+                        viewerSubscribed: isNotNull(viewerSubscriptions.viewerId).mapWith(Boolean),
                     },
                     viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)),
                     likeCount: db.$count(videoReactions, and(eq(videoReactions.videoId, videos.id), eq(videoReactions.type, "like"))),
@@ -51,6 +60,7 @@ export const videosRouter = createTRPCRouter({
                 .from(videos)
                 .leftJoin(users, eq(videos.userId, users.id))
                 .leftJoin(viewerReactions, eq(viewerReactions.videoId, videos.id))
+                .leftJoin(viewerSubscriptions, eq(viewerSubscriptions.creatorId, users.id))
                 .where(eq(videos.id, input.id))
                 .limit(1)
 
