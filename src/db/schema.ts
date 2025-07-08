@@ -1,4 +1,5 @@
 import {
+    foreignKey,
     integer,
     pgEnum,
     pgTable,
@@ -183,3 +184,46 @@ export const videoReactionRelations = relations(videoReactions, ({ one }) => ({
 export const videoReactionSelectSchema = createSelectSchema(videoReactions);
 export const videoReactionInsertSchema = createInsertSchema(videoReactions);
 export const videoReactionUpdateSchema = createUpdateSchema(videoReactions);
+
+
+export const comments = pgTable("comments", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    parentId: uuid("parent_id"),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    videoId: uuid("video_id").references(() => videos.id, { onDelete: "cascade" }).notNull(),
+    value: text("value").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => {
+    return [
+        foreignKey({
+            columns: [t.parentId],
+            foreignColumns: [t.id],
+            name: "comments_parent_id_fkey",
+        }),
+    ]
+});
+
+export const commentRelations = relations(comments, ({ one }) => ({
+    user: one(users, {
+        fields: [comments.userId],
+        references: [users.id],
+    }),
+    video: one(videos, {
+        fields: [comments.videoId],
+        references: [videos.id],
+    }),
+    parent: one(comments, {
+        fields: [comments.parentId],
+        references: [comments.id],
+        relationName: "comments_parent_id_fkey",
+    }),
+    // reactions: many(commentReactions),
+    // replies: many(comments, {
+    //     relationName: "comments_parent_id_fkey",
+    // }),
+}));
+
+export const commentSelectSchema = createSelectSchema(comments);
+export const commentInsertSchema = createInsertSchema(comments);
+export const commentUpdateSchema = createUpdateSchema(comments);
