@@ -13,17 +13,21 @@ import {Form, FormControl, FormField, FormItem, FormMessage} from "@/components/
 
 interface CommentFormProps {
     videoId: string;
+    parentId?: string;
     onSuccess?: () => void;
+    onCancel?: () => void;
+    variant?: "comment" | "reply";
 }
 
 export const CommentForm = (
-    { videoId, onSuccess }: CommentFormProps
+    { videoId, parentId, onSuccess, onCancel, variant = "comment" }: CommentFormProps
 ) => {
     const {user} = useUser();
     const clerk = useClerk();
     const create = trpc.comments.create.useMutation({
         onSuccess: () => {
             utils.comments.getMany.invalidate({videoId});
+            utils.comments.getMany.invalidate({videoId, parentId});
             form.reset();
             toast.success("comment added");
             onSuccess?.();
@@ -40,6 +44,7 @@ export const CommentForm = (
         resolver: zodResolver(commentInsertSchema.omit({userId: true})),
         defaultValues: {
             videoId,
+            parentId,
             value: "",
         }
     });
@@ -47,6 +52,11 @@ export const CommentForm = (
     const handleSubmit = (values: z.infer<typeof commentInsertSchema>) => {
         create.mutate(values);
     };
+
+    const handleCancel = () => {
+        form.reset();
+        onCancel?.();
+    }
 
     return (
         <Form {...form}>
@@ -69,7 +79,7 @@ export const CommentForm = (
                                 <FormControl>
                                     <Textarea
                                         {...field}
-                                        placeholder="Add a comment..."
+                                        placeholder={`Add a ${variant}...`}
                                         className="resize-none bg-transparent overflow-hidden min-h-0"
                                     />
                                 </FormControl>
@@ -79,11 +89,17 @@ export const CommentForm = (
                     />
 
                     <div className="justify-end gap-2 mt-2 flex">
+                        {onCancel && (
+                            <Button type="button" variant="ghost" size="sm" onClick={handleCancel} >
+                                Cancel
+                            </Button>
+                        )}
+
                         <Button
                             type="submit"
                             size="sm"
                         >
-                            Comment
+                            {variant === "reply" ? "Reply" : "Comment"}
                         </Button>
                     </div>
                 </div>
