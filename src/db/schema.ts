@@ -200,7 +200,7 @@ export const comments = pgTable("comments", {
             columns: [t.parentId],
             foreignColumns: [t.id],
             name: "comments_parent_id_fkey",
-        }),
+        }).onDelete("cascade"),
     ]
 });
 
@@ -219,9 +219,9 @@ export const commentRelations = relations(comments, ({ one, many }) => ({
         relationName: "comments_parent_id_fkey",
     }),
     reactions: many(commentReactions),
-    // replies: many(comments, {
-    //     relationName: "comments_parent_id_fkey",
-    // }),
+    replies: many(comments, {
+        relationName: "comments_parent_id_fkey",
+    }),
 }));
 
 export const commentSelectSchema = createSelectSchema(comments);
