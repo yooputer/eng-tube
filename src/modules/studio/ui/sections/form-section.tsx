@@ -52,6 +52,7 @@ import {THUMBNAIL_FALLBACK} from "@/modules/videos/constants";
 import Image from "next/image";
 import {ThumbnailUploadModal} from "@/modules/studio/ui/components/thumbnail-upload-modal";
 import {ThumbnailGenerateModal} from "@/modules/studio/ui/components/thumbnail-generate-modal";
+import {APP_URL} from "@/constants";
 
 interface FormSectionProps{
     videoId: string;
@@ -135,8 +136,7 @@ const FormSectionSuspense = ({ videoId }: FormSectionProps) => {
     const [video] = trpc.studio.getOne.useSuspenseQuery({id: videoId});
     const [categories] = trpc.categories.getMany.useSuspenseQuery();
 
-    /* TODO: Update fullUrl for deployment */
-    const fullUrl = `http://localhost:3000/videos/${videoId}`;
+    const fullUrl = `${APP_URL}/videos/${videoId}`;
 
     const update = trpc.videos.update.useMutation({
         onSuccess: () => {

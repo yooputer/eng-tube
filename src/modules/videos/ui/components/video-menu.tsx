@@ -2,6 +2,7 @@ import {ListPlusIcon, MoreVerticalIcon, ShareIcon, Trash2Icon} from "lucide-reac
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import {Button} from "@/components/ui/button";
 import {toast} from "sonner";
+import {APP_URL} from "@/constants";
 
 
 interface VideoMenuProps {
@@ -14,8 +15,7 @@ export const VideoMenu = (
     {videoId, variant, onRemove, }: VideoMenuProps
 ) => {
     const onShare = () => {
-        /* TODO: 배포 url 세팅*/
-        const fullUrl = `${process.env.VERCEL_URL || 'http://localhost:3000'}/videos/${videoId}`;
+        const fullUrl = `${APP_URL}/videos/${videoId}`;
 
         navigator.clipboard.writeText(fullUrl);
 
