@@ -68,4 +68,70 @@ export const playlistsRouter = createTRPCRouter({
                 nextCursor
             };
         }),
+    getLiked: protectedProcedure
+        .input(
+            z.object({
+                cursor: z.object({
+                    id: z.string().uuid(),
+                    likedAt: z.date(),
+                }).nullish(),
+                limit: z.number().min(1).max(100),
+            })
+        )
+        .query( async ({ input, ctx }) => {
+            const { cursor, limit } = input;
+            const {id: userId} = ctx.user;
+
+            const likedVideos = db.$with('liked_videos').as(
+                db
+                    .select({
+                        videoId: videoReactions.videoId,
+                        likedAt: videoReactions.updatedAt,
+                    })
+                    .from(videoReactions)
+                    .where(and(
+                        eq(videoReactions.userId, userId),
+                        eq(videoReactions.type, "like"),
+                    ))
+            );
+
+            const data = await db
+                .with(likedVideos)
+                .select({
+                    ...getTableColumns(videos),
+                    user: users,
+                    likedAt: likedVideos.likedAt,
+                    viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)),
+                    likeCount: db.$count(videoReactions, and(eq(videoReactions.videoId, videos.id), eq(videoReactions.type, "like"))),
+                    dislikeCount: db.$count(videoReactions, and(eq(videoReactions.videoId, videos.id), eq(videoReactions.type, "dislike"))),
+                })
+                .from(videos)
+                .innerJoin(users, eq(videos.userId, users.id))
+                .innerJoin(likedVideos, eq(videos.id, likedVideos.videoId))
+                .where(and(
+                    eq(videos.visibility, "public"),
+                    cursor ? or(
+                            lt(likedVideos.likedAt, cursor.likedAt),
+                            and(
+                                eq(likedVideos.likedAt, cursor.likedAt),
+                                lt(videos.id, cursor.id)
+                            ))
+                        : undefined,
+                ))
+                .orderBy(desc(likedVideos.likedAt), desc(videos.id))
+                .limit(limit + 1);
+
+            // 만약 조회한 비디오의 개수가 (limit + 1)과 같으면 조회할 데이터가 있다는 뜻.
+            // 마지막 아이템은 지우고 반환
+            const hasMore = data.length > limit;
+            const items = hasMore ? data.slice(0, -1) : data;
+
+            const lastItem = items[items.length - 1];
+            const nextCursor = hasMore ? { id: lastItem.id, likedAt: lastItem.likedAt } : null;
+
+            return {
+                items,
+                nextCursor
+            };
+        }),
 })
