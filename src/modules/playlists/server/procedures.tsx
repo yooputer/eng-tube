@@ -1,10 +1,83 @@
 import {and, desc, eq, getTableColumns, lt, or} from "drizzle-orm";
 import {createTRPCRouter, protectedProcedure} from "@/trpc/init";
 import {db} from "@/db";
-import {users, videoReactions, videos, videoViews} from "@/db/schema";
+import {playlists, playlistVideos, users, videoReactions, videos, videoViews} from "@/db/schema";
 import {z} from "zod";
+import {TRPCError} from "@trpc/server";
 
 export const playlistsRouter = createTRPCRouter({
+    create: protectedProcedure
+        .input(
+            z.object({
+                name: z.string().min(1),
+            })
+        )
+        .mutation( async ({ input, ctx }) => {
+            const { name } = input;
+            const {id: userId} = ctx.user;
+
+            const [createdPlaylist] = await db
+                .insert(playlists)
+                .values({
+                    userId,
+                    name,
+                })
+                .returning();
+
+            if (!createdPlaylist) {
+                throw new TRPCError({code: "BAD_REQUEST"});
+            }
+
+            return createdPlaylist;
+        }),
+    getMany: protectedProcedure
+        .input(
+            z.object({
+                cursor: z.object({
+                    id: z.string().uuid(),
+                    updatedAt: z.date(),
+                }).nullish(),
+                limit: z.number().min(1).max(100),
+            })
+        )
+        .query( async ({ input, ctx }) => {
+            const { cursor, limit } = input;
+            const {id: userId} = ctx.user;
+
+            const data = await db
+                .select({
+                    ...getTableColumns(playlists),
+                    playlistVideoCount: db.$count(playlistVideos, eq(playlists.id, playlistVideos.playlistId)),
+                    user: users,
+                })
+                .from(playlists)
+                .innerJoin(users, eq(playlists.userId, users.id))
+                .where(and(
+                    eq(playlists.userId, userId),
+                    cursor ? or(
+                            lt(playlists.updatedAt, cursor.updatedAt),
+                            and(
+                                eq(playlists.updatedAt, cursor.updatedAt),
+                                lt(playlists.id, cursor.id)
+                            ))
+                        : undefined,
+                ))
+                .orderBy(desc(playlists.updatedAt), desc(playlists.id))
+                .limit(limit + 1);
+
+            // 만약 조회한 비디오의 개수가 (limit + 1)과 같으면 조회할 데이터가 있다는 뜻.
+            // 마지막 아이템은 지우고 반환
+            const hasMore = data.length > limit;
+            const items = hasMore ? data.slice(0, -1) : data;
+
+            const lastItem = items[items.length - 1];
+            const nextCursor = hasMore ? { id: lastItem.id, updatedAt: lastItem.updatedAt } : null;
+
+            return {
+                items,
+                nextCursor
+            };
+        }),
     getHistory: protectedProcedure
         .input(
             z.object({
