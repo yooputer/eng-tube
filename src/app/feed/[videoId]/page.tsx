@@ -1,5 +1,5 @@
 interface PageProps {
-    params: { videoId: string }
+    params: Promise<{ videoId: string }>;
 }
 
 const Page = async ({ params }:PageProps) => {

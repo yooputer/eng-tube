@@ -41,12 +41,12 @@ export const CommentForm = (
     const utils = trpc.useUtils();
 
     const form = useForm<z.infer<typeof commentInsertSchema>>({
-        resolver: zodResolver(commentInsertSchema.omit({userId: true})),
+        resolver: zodResolver(commentInsertSchema.omit({ userId: true })),
         defaultValues: {
-            videoId,
-            parentId,
+            parentId: parentId,
+            videoId: videoId,
             value: "",
-        }
+        },
     });
 
     const handleSubmit = (values: z.infer<typeof commentInsertSchema>) => {

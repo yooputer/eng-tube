@@ -39,20 +39,22 @@ export const VideoTopRow = ({video}: VideoTopRowProps) => {
         return Intl.NumberFormat('en', {
             notation: 'compact'
         }).format(viewCount);
-    }, []);
+    }, [viewCount]);
 
     const expandedViews = useMemo(() => {
         return Intl.NumberFormat('en', {
             notation: 'standard'
         }).format(viewCount);
-    }, []);
+    }, [viewCount]);
 
     const compactDate = useMemo(() => {
         return formatDistanceToNow(video.createdAt, {addSuffix: true});
     }, [video.createdAt]);
 
     const expandedDate = useMemo(() => {
-        return formatDistanceToNow(video.createdAt, 'd MMM yyyy');
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        return formatDistanceToNow(video.createdAt, "d MMM yyyy");
     }, [video.createdAt]);
 
     return (
