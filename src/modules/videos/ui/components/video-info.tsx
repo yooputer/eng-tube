@@ -39,22 +39,22 @@ export const VideoInfo = (
 
     return (
         <div className="flex gap-3">
-            <Link href={`/users/${data.user.id}`}>
+            <Link prefetch href={`/users/${data.user.id}`}>
                 <UserAvatar size="sm" imageUrl={data.user.imageUrl} name={data.user.name}/>
             </Link>
 
             <div className="min-w-0 flex-1">
-                <Link href={`/videos/${data.id}`} >
+                <Link prefetch href={`/videos/${data.id}`} >
                     <h3 className="font-medium line-clamp-1 lg:line-clamp-2 text-base break-words">
                         {data.title}
                     </h3>
                 </Link>
 
-                <Link href={`/users/${data.user.id}`}>
+                <Link prefetch href={`/users/${data.user.id}`}>
                     <UserInfo size="sm" name={data.user.name} />
                 </Link>
 
-                <Link href={`/videos/${data.id}`} >
+                <Link prefetch href={`/videos/${data.id}`} >
                     <p>
                         {compactViews} views * {compactDate}
                     </p>

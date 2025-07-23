@@ -94,7 +94,7 @@ export const VideoRowCard = (
     return (
         <div className={videoRowCardVariants({size})}>
             {/* 썸네일 */}
-            <Link href={`/videos/${data.id}`} className={thumbnailVariants({size})}>
+            <Link prefetch href={`/videos/${data.id}`} className={thumbnailVariants({size})}>
                 <VideoThumbnail
                     imageUrl={data.thumbnailUrl}
                     previewUrl={data.previewUrl}
@@ -106,7 +106,7 @@ export const VideoRowCard = (
             {/* info */}
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between gap-x-2">
-                    <Link href={`/videos/${data.id}`} className="flex-1 min-w-0" >
+                    <Link prefetch href={`/videos/${data.id}`} className="flex-1 min-w-0" >
                         <h3
                             className={cn(
                                 "font-medium line-clamp-2",
