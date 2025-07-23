@@ -54,7 +54,7 @@ export const VideoMenu = (
                     </DropdownMenuItem>
 
                     {onRemove && (
-                        <DropdownMenuItem onClick={() => {}}> {/* TODO 재생목록 삭제 기능 구현 */}
+                        <DropdownMenuItem onClick={onRemove}>
                             <Trash2Icon className="mr-2 size-4" />
                             Remove
                         </DropdownMenuItem>

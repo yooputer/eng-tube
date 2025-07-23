@@ -29,12 +29,11 @@ export const PlaylistAddModal = (
     });
 
     const addVideo = trpc.playlists.addVideo.useMutation({
-        onSuccess: () => {
+        onSuccess: (data) => {
             toast.success("Video added to playlist");
             utils.playlists.getManyForVideo.invalidate({videoId});
             utils.playlists.getMany.invalidate();
-
-            // TODO: invalidate playlists.getOne
+            utils.playlists.getVideos.invalidate({playlistId: data.playlistId, limit: DEFAULT_LIMIT});
         },
         onError: () => {
             toast.success("Something went wrong.");
@@ -42,12 +41,11 @@ export const PlaylistAddModal = (
     })
 
     const removeVideo = trpc.playlists.removeVideo.useMutation({
-        onSuccess: () => {
+        onSuccess: (data) => {
             toast.success("Video removed to playlist");
             utils.playlists.getManyForVideo.invalidate({videoId});
             utils.playlists.getMany.invalidate();
-
-            // TODO: invalidate playlists.getOne
+            utils.playlists.getVideos.invalidate({playlistId: data.playlistId, limit: DEFAULT_LIMIT});
         },
         onError: () => {
             toast.success("Something went wrong.");
