@@ -6,6 +6,139 @@ import {z} from "zod";
 import {TRPCError} from "@trpc/server";
 
 export const playlistsRouter = createTRPCRouter({
+    remove: protectedProcedure
+        .input(
+            z.object({
+                playlistId: z.string().uuid(),
+            })
+        )
+        .mutation( async ({input, ctx}) => {
+            const { playlistId, } = input;
+            const {id: userId} = ctx.user;
+
+            const [existingPlaylist] = await db
+                .select()
+                .from(playlists)
+                .where(eq(playlists.id, playlistId));
+
+            if (!existingPlaylist) {
+                throw new TRPCError({code: "NOT_FOUND"});
+            }
+
+            if (existingPlaylist.userId !== userId) {
+                throw new TRPCError({code: "FORBIDDEN"});
+            }
+
+            const [deletedPlaylist] = await db
+                .delete(playlists)
+                .where(eq(playlists.id, playlistId))
+                .returning();
+
+            return deletedPlaylist;
+        }),
+    getOne: protectedProcedure
+        .input(
+            z.object({
+                playlistId: z.string().uuid(),
+            })
+        )
+        .query( async ({ input, ctx }) => {
+            const { playlistId, } = input;
+            const {id: userId} = ctx.user;
+
+            const [existingPlaylist] = await db
+                .select()
+                .from(playlists)
+                .where(eq(playlists.id, playlistId));
+
+            if (!existingPlaylist) {
+                throw new TRPCError({code: "NOT_FOUND"});
+            }
+
+            /* TODO: 재생목록 공개여부 설정 기능 구현 */
+            if (existingPlaylist.userId !== userId) {
+                throw new TRPCError({code: "FORBIDDEN"});
+            }
+
+            return existingPlaylist;
+        }),
+    getVideos: protectedProcedure
+        .input(
+            z.object({
+                playlistId: z.string().uuid(),
+                cursor: z.object({
+                    id: z.string().uuid(),
+                    addedAt: z.date(),
+                }).nullish(),
+                limit: z.number().min(1).max(100),
+            })
+        )
+        .query( async ({ input, ctx }) => {
+            const { playlistId, cursor, limit } = input;
+            const {id: userId} = ctx.user;
+
+            const [existingPlaylist] = await db
+                .select()
+                .from(playlists)
+                .where(eq(playlists.id, playlistId));
+
+            if (!existingPlaylist) {
+                throw new TRPCError({code: "NOT_FOUND"});
+            }
+
+            /* TODO: 재생목록 공개여부 설정 기능 구현 */
+            if (existingPlaylist.userId !== userId) {
+                throw new TRPCError({code: "FORBIDDEN"});
+            }
+
+            const videosFromPlaylist = db.$with('videos_from_playlist').as(
+                db
+                    .select({
+                        videoId: playlistVideos.videoId,
+                        addedAt: playlistVideos.createdAt,
+                    })
+                    .from(playlistVideos)
+                    .where(eq(playlistVideos.playlistId, playlistId)));
+
+            const data = await db
+                .with(videosFromPlaylist)
+                .select({
+                    ...getTableColumns(videos),
+                    user: users,
+                    addedAt: videosFromPlaylist.addedAt,
+                    viewCount: db.$count(videoViews, eq(videoViews.videoId, videos.id)),
+                    likeCount: db.$count(videoReactions, and(eq(videoReactions.videoId, videos.id), eq(videoReactions.type, "like"))),
+                    dislikeCount: db.$count(videoReactions, and(eq(videoReactions.videoId, videos.id), eq(videoReactions.type, "dislike"))),
+                })
+                .from(videos)
+                .innerJoin(users, eq(videos.userId, users.id))
+                .innerJoin(videosFromPlaylist, eq(videos.id, videosFromPlaylist.videoId))
+                .where(and(
+                    eq(videos.visibility, "public"),
+                    cursor ? or(
+                            lt(videosFromPlaylist.addedAt, cursor.addedAt),
+                            and(
+                                eq(videosFromPlaylist.addedAt, cursor.addedAt),
+                                lt(videos.id, cursor.id)
+                            ))
+                        : undefined,
+                ))
+                .orderBy(desc(videosFromPlaylist.addedAt), desc(videos.id))
+                .limit(limit + 1);
+
+            // 만약 조회한 비디오의 개수가 (limit + 1)과 같으면 조회할 데이터가 있다는 뜻.
+            // 마지막 아이템은 지우고 반환
+            const hasMore = data.length > limit;
+            const items = hasMore ? data.slice(0, -1) : data;
+
+            const lastItem = items[items.length - 1];
+            const nextCursor = hasMore ? { id: lastItem.id, addedAt: lastItem.addedAt } : null;
+
+            return {
+                items,
+                nextCursor
+            };
+        }),
     addVideo: protectedProcedure
         .input(
             z.object({
